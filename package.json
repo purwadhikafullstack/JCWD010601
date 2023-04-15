@@ -1,7 +1,7 @@
 {
   "name": "final-project-template",
   "scripts": {
-    "start": "lerna run start --stream",
+    "dev": "lerna run dev --stream",
     "build": "lerna run build --stream",
     "serve": "lerna run serve --stream",
     "clean": "lerna clean --y",
@@ -15,7 +15,7 @@
   },
   "private": true,
   "devDependencies": {
-    "lerna": "^5.4.0"
+    "lerna": "^6.5.1"
   },
   "workspaces": [
     "projects/*"

@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MANAGER
+}
+
+model User {
+  id              Int             @id @default(autoincrement())
+  email           String          @unique @db.VarChar(255)
+  hashedPassword  String?          
+  imageUrl        String?     
+  role            UserRole
+  token           String?         @unique
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  names           UserName[]
+  warehouse       Warehouse?
+  addresses       UserAddress[]
+  primaryAddress  UserPrimaryAddress?
+  orders          Order[]
+}
+
+model UserName {
+  userId          Int             
+  name            String          @db.VarChar(255)
+  usageCount      Int             @default(1)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id])
+
+  @@id([userId, name])
+}
+
+model UserAddress {
+  id              Int                   @id @default(autoincrement())
+  userId          Int
+  latitude        Decimal
+  longitude       Decimal
+  province        String                @db.VarChar(255)
+  city            String                @db.VarChar(255)
+  street          String                @db.VarChar(255)
+  detail          String
+  postalCode      String                @db.VarChar(255)
+
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  deletedAt       DateTime?
+
+  user            User                  @relation(fields: [userId], references: [id])
+  primaryAddress  UserPrimaryAddress?
+}
+
+model UserPrimaryAddress {
+  userId      Int           @id
+  addressId   Int           @unique
+
+  user        User          @relation(fields: [userId], references: [id])
+  address     UserAddress   @relation(fields: [addressId], references: [id])
+}
+
+model Warehouse {
+  id              Int                   @id @default(autoincrement())
+  managerId       Int                   @unique
+  name            String                @db.VarChar(255)
+  latitude        Decimal
+  longitude       Decimal
+  province        String                @db.VarChar(255)
+  city            String                @db.VarChar(255)
+  district        String                @db.VarChar(255)
+  detail          String  
+
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  deletedAt       DateTime?  
+
+  manager         User                  @relation(fields: [managerId], references: [id])
+  stocks          Stock[]
+  exports         StockMutation[]       @relation(name: "Out")
+  imports         StockMutation[]       @relation(name: "In")
+  orders          Order[]
+}
+
+model Product {
+  id                  Int         @id @default(autoincrement())
+  categoryId          Int
+  name                String      @unique
+  description         String
+  imageUrl            String
+  priceRupiahPerUnit  Int
+
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  deletedAt           DateTime?
+
+  category            ProductCategory @relation(fields: [categoryId], references: [id])
+  stocks              Stock[]
+  stockMutations      StockMutation[]
+  orders              OrderDetail[]
+}
+
+model ProductCategory {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique @db.VarChar(255)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  products    Product[]
+}
+
+model Stock {
+  productId     Int
+  warehouseId   Int
+  quantity      Int
+
+  product       Product     @relation(fields: [productId], references: [id])
+  warehouse     Warehouse   @relation(fields: [warehouseId], references: [id])
+
+  @@id([productId, warehouseId])
+}
+
+enum StockMutationStatus {
+  REQUESTED
+  ACCEPTED
+  CANCELLED
+  AUTO
+}
+
+model StockMutation {
+  id          Int                   @id @default(autoincrement())
+  productId   Int
+  exporterId  Int
+  importerId  Int
+  quantity    Int
+  status      StockMutationStatus
+
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  product     Product               @relation(fields: [productId], references: [id])
+  exporter    Warehouse             @relation(name: "Out", fields: [exporterId], references: [id])
+  importer    Warehouse             @relation(name: "In", fields: [importerId], references: [id])
+}
+
+enum OrderStatus {
+  UNSETTLED
+  REQUESTED
+  PREPARING
+  SENDING
+  DELIVERED
+  CANCELLED
+}
+
+enum ShipmentMethod {
+  JNE
+  POS
+  TIKI
+}
+
+model Order {
+  id                Int               @id @default(autoincrement())
+  userId            Int
+  warehouseId       Int
+  status            OrderStatus
+  userAddressFull   String
+  shipmentMethod    ShipmentMethod
+  shipmentPrice     Int
+  paymentImageUrl   String?
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  user              User              @relation(fields: [userId], references: [id])
+  warehouse         Warehouse         @relation(fields: [warehouseId], references: [id])
+  details           OrderDetail[]
+}
+
+model OrderDetail {
+  orderId             Int
+  productId           Int
+  quantity            Int
+  priceRupiahPerUnit  Int
+
+  order               Order   @relation(fields: [orderId], references: [id])
+  product             Product @relation(fields: [productId], references: [id])
+
+  @@id([orderId, productId])
+}
