@@ -40,4 +40,5 @@ jobs:
           script: |
             cd ${{ secrets.SSH_FOLDER }}
             npm install
+            npx prisma generate
             pm2 start deploy.config.js
