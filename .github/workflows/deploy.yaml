@@ -20,7 +20,6 @@ jobs:
       - name: Build Project
         run: |
           npm install
-          npx prisma generate
           npm run build
       - name: Deploy to Linode
         uses: appleboy/scp-action@master
@@ -41,5 +40,4 @@ jobs:
           script: |
             cd ${{ secrets.SSH_FOLDER }}
             npm install
-            npx prisma generate
             pm2 start deploy.config.js
